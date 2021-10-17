@@ -1,5 +1,5 @@
 extends:
-  - plugin:prettier/recommended
+  - plugin:vue/base
   - plugin:import/recommended
 globals:
   __webpack_public_path__: true
