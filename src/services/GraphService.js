@@ -15,3 +15,5 @@ class GraphService {
     }
   }
 }
+
+export default new GraphService();

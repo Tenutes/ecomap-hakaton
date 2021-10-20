@@ -10,7 +10,7 @@ class StationApi extends BaseApi {
   }
 
   post(coords) {
-    return this.http.post('', coords);
+    return this.http.post('/new', coords);
   }
 
   read(id) {

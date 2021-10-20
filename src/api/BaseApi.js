@@ -7,7 +7,5 @@ export class BaseApi {
     this.http = axios.create({
       baseURL: API_URL + endpoint,
     });
-
-    console.log(API_URL);
   }
 }

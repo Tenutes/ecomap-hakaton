@@ -1,25 +1,70 @@
 <script>
 import { yandexMap, ymapMarker } from 'vue-yandex-maps';
 
+import NewPointImage from '../assets/point-new.png';
+import PointImage from '../assets/point.png';
+
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_SETTINGS } from './constants';
 
 export default {
   name: 'Map',
-  components: { yandexMap },
-  props: {},
+  components: { yandexMap, ymapMarker },
+  props: {
+    newPoint: {
+      type: Object,
+      default: null,
+    },
+    points: {
+      type: Array,
+      default: [],
+    },
+  },
   data() {
     return {
       map: null,
+      choosePoint: false,
+      pointMarker: {
+        layout: 'default#image',
+        imageHref: PointImage,
+        imageSize: [32, 32],
+        imageOffset: [-16, -16],
+      },
+      newPointMarker: {
+        layout: 'default#image',
+        imageHref: NewPointImage,
+        imageSize: [32, 32],
+        imageOffset: [-16, -16],
+      },
     };
   },
   MAP_SETTINGS,
   MAP_DEFAULT_CENTER,
   MAP_DEFAULT_ZOOM,
-  computed: {},
-  watch: {},
   methods: {
     setMap(map) {
       this.map = map;
+    },
+    mapClick(e) {
+      if (!this.choosePoint) {
+        return;
+      }
+
+      const [lat, lng] = e.get('coords');
+      this.$emit('select-new-station', { lat, lng });
+      this.togglePointChoose();
+    },
+    pointClick(e, point) {
+      e.stopPropagation();
+      if (this.choosePoint) {
+        return;
+      }
+
+      const { id } = point;
+
+      this.$emit('select-station', id);
+    },
+    togglePointChoose() {
+      this.choosePoint = !this.choosePoint;
     },
   },
 };
@@ -27,25 +72,82 @@ export default {
 
 <template>
 <div class="map" v-loading="!map">
-  <yandex-map
-    :settings="$options.MAP_SETTINGS"
-    :coords="$options.MAP_DEFAULT_CENTER"
-    :zoom="$options.MAP_DEFAULT_ZOOM"
-    :behaviors="[]"
-    :controls="[]"
-    @map-was-initialized="setMap"
-  />
+  <el-button
+    :disabled="!map"
+    type="warning"
+    class="map__button"
+    @click="togglePointChoose"
+    :icon="choosePoint ? 'el-icon-close' : ''"
+    :circle="choosePoint"
+  >
+    <template v-if="!choosePoint">Выбрать произвольную точку</template>
+  </el-button>
+  <div class="map__container" :class="{'choose-point': choosePoint}">
+    <yandex-map
+      :settings="$options.MAP_SETTINGS"
+      :coords="$options.MAP_DEFAULT_CENTER"
+      :zoom="$options.MAP_DEFAULT_ZOOM"
+      :behaviors="[]"
+      :controls="[]"
+      @map-was-initialized="setMap"
+      @click="mapClick"
+    >
+      <ymap-marker
+        v-for="point in points"
+        :key="point.id"
+        :marker-id="point.id"
+        :coords="[point.lat, point.lng]"
+        :hint-content="point.name"
+        :icon="pointMarker"
+        @click="e => pointClick(e, point)"
+      />
+      <ymap-marker
+        v-if="newPoint"
+        :marker-id="'n' + newPoint.id"
+        :coords="[newPoint.lat, newPoint.lng]"
+        :hint-content="newPoint.name"
+        :icon="newPointMarker"
+      />
+    </yandex-map>
+  </div>
 </div>
 </template>
 
+<style lang="scss">
+.map {
+  &__container {
+    [class*="ymaps-2"][class*="-ground-pane"] {
+      filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale");
+      -webkit-filter: grayscale(100%);
+    }
+  }
+}
+</style>
+
 <style lang="scss" scoped>
 .map {
-  width: 100%;
+  position: relative;
   height: 100%;
 
-  * {
+  &__container {
     width: 100%;
     height: 100%;
+
+    * {
+      width: 100%;
+      height: 100%;
+    }
+
+    &.choose-point {
+      cursor: crosshair;
+    }
+  }
+
+  &__button {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
   }
 }
 </style>

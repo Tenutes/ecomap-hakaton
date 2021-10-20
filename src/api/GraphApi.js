@@ -2,7 +2,7 @@ import { BaseApi } from './BaseApi';
 
 class GraphApi extends BaseApi {
   constructor() {
-    super('graph');
+    super('/graph');
   }
 
   get(params) {

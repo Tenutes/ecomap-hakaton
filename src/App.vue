@@ -1,32 +1,102 @@
 <script>
-import Map from './components/Map';
+import { format, addDays } from 'date-fns';
+
+import GraphModal from './components/GraphModal';
+import YaMap from './components/Map';
 import Sidebar from './components/Sidebar';
+import GraphService from './services/GraphService';
 import StationService from './services/StationService';
 
 export default {
   name: 'App',
-  components: { Sidebar, Map },
+  components: { GraphModal, Sidebar, YaMap },
   data() {
     return {
-      currentPoint: null,
-      points: null,
+      points: [],
+      selectedStation: null,
+      newPointInfo: null,
+      graphData: null,
+      modalVisible: false,
     };
   },
 
   async mounted() {
-    this.points = await StationService.getStations();
-  }
+    const { data } = await StationService.getStations();
+    this.points = data.stations;
+  },
+
+  methods: {
+    async selectStation(id) {
+      const { data: stationData } = await StationService.getStationById(id);
+      this.selectedStation = stationData;
+    },
+
+    async selectNewStation(coords) {
+      const { data: stationInfo } = await StationService.getNewStation(coords);
+      this.newPointInfo = { ...stationInfo, ...coords };
+    },
+
+    async getGraph(station) {
+      this.modalVisible = true;
+
+      const params = {
+        station_id: station.id,
+        forecast: 0,
+        lat: station.lat,
+        lng: station.lng,
+        from_datetime: `${ format(Date.now(), 'yyyy-MM-dd') }T00:00:00.176Z`,
+        to_datetime: `${ format(addDays(Date.now(), 1), 'yyyy-MM-dd') }T00:00:00.176Z`,
+      };
+
+      await this.loadChartData(station, params);
+    },
+
+    async loadChartData(station, params) {
+      const { data } = await GraphService.get(params);
+      this.graphData = { station, substances: data.substances };
+      this.modalTab = this.graphData.substances?.[0]?.name;
+    },
+
+    async updateChart({ station, data }) {
+      const params = {
+        station_id: station.id,
+        forecast: data.forecast,
+        lat: station.lat,
+        lng: station.lng,
+        from_datetime: data.time[0],
+        to_datetime: data.time[1],
+      };
+
+      await this.loadChartData(station, params);
+    },
+
+    async getPolygon(station) {
+      // eslint-disable-next-line
+      alert('Хрен тобi');
+      console.log(station);
+    },
+  },
 };
 </script>
 
 <template>
 <div class="app">
   <div class="app__map">
-    <Map/>
+    <ya-map
+      @select-station="selectStation"
+      @select-new-station="selectNewStation"
+      :points="points"
+      :new-point="newPointInfo"
+    />
   </div>
   <div class="app__info">
-    <Sidebar :point="currentPoint"/>
+    <sidebar
+      :station="newPointInfo || selectedStation"
+      @get-graph="getGraph"
+      @get-polygon="getPolygon"
+    />
   </div>
+  <graph-modal :graph-data="graphData" :modal-visible.sync="modalVisible" @update-chart="updateChart"/>
 </div>
 </template>
 
@@ -39,6 +109,8 @@ body {
 }
 
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: inherit;
 }
 
@@ -54,7 +126,7 @@ body {
     flex-shrink: 0;
     position: relative;
     z-index: 2;
-    width: 350px;
+    width: 400px;
     transition: .25s;
   }
 }
