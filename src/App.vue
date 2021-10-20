@@ -26,16 +26,22 @@ export default {
   },
 
   methods: {
-    async selectStation(id) {
-      const { data: stationData } = await StationService.getStationById(id);
+    async selectStation({ point, is_new }) {
       this.modalVisible = false;
-      this.selectedStation = stationData;
+      if (is_new) {
+        this.selectedStation = this.newPointInfo;
+      } else {
+        const { data: stationData } = await StationService.getStationById(point.id);
+        this.selectedStation = stationData;
+      }
     },
 
     async selectNewStation(coords) {
       const { data: stationInfo } = await StationService.getNewStation(coords);
       this.modalVisible = false;
-      this.newPointInfo = { ...stationInfo, ...coords };
+      const selectedStation = { ...stationInfo, ...coords };
+      this.selectedStation = selectedStation;
+      this.newPointInfo = selectedStation;
     },
 
     async getGraph(station) {
@@ -93,7 +99,7 @@ export default {
   </div>
   <div class="app__info">
     <sidebar
-      :station="newPointInfo || selectedStation"
+      :station="selectedStation"
       @get-graph="getGraph"
       @get-polygon="getPolygon"
     />

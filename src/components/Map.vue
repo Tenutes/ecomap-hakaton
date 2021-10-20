@@ -53,15 +53,12 @@ export default {
       this.$emit('select-new-station', { lat, lng });
       this.togglePointChoose();
     },
-    pointClick(e, point) {
+    pointClick(e, point, is_new = false) {
       e.stopPropagation();
       if (this.choosePoint) {
         return;
       }
-
-      const { id } = point;
-
-      this.$emit('select-station', id);
+      this.$emit('select-station', { point, is_new });
     },
     togglePointChoose() {
       this.choosePoint = !this.choosePoint;
@@ -107,6 +104,7 @@ export default {
         :coords="[newPoint.lat, newPoint.lng]"
         :hint-content="newPoint.name"
         :icon="newPointMarker"
+        @click="e => pointClick(e, newPoint, true)"
       />
     </yandex-map>
   </div>
