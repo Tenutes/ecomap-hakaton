@@ -5,5 +5,5 @@ build:
 up:
 	${COMPOSE} up
 reload:
- ${COMPOSE} stop
- ${COMPOSE} up -d
+	${COMPOSE} stop
+	${COMPOSE} up -d
