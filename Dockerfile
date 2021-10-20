@@ -1,10 +1,10 @@
-FROM alpine:latest
+FROM alpine:latest as build-stage
 
 RUN apk add --no-cache --update bash nodejs npm
 ADD ./ /app
 
 WORKDIR /app
-RUN npm install && npm run build
+RUN npm install && npm rebuild node-sass && npm run build
 
 FROM nginx as production-stage
 RUN mkdir /app

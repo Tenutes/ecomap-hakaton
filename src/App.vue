@@ -44,8 +44,8 @@ export default {
         forecast: 0,
         lat: station.lat,
         lng: station.lng,
-        from_datetime: `${ format(Date.now(), 'yyyy-MM-dd') }T00:00:00.176Z`,
-        to_datetime: `${ format(addDays(Date.now(), 1), 'yyyy-MM-dd') }T00:00:00.176Z`,
+        from_datetime: `${ format(new Date().setFullYear(2020), 'yyyy-MM-dd') }T00:00:00.176Z`,
+        to_datetime: `${ format(addDays(new Date().setFullYear(2020), 1), 'yyyy-MM-dd') }T00:00:00.176Z`,
       };
 
       await this.loadChartData(station, params);

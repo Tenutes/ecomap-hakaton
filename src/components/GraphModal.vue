@@ -32,6 +32,11 @@ export default {
       },
     };
   },
+  watch: {
+    graphData(n) {
+      this.modalTab = n?.substances?.[0]?.name;
+    },
+  },
   computed: {
     isChanged() {
       return this.chartDateRange !== this.dump.chartDateRange ||
