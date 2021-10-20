@@ -2,7 +2,12 @@
 import { format, isSameDay, parseISO } from 'date-fns';
 
 import LineChart from './LineChart';
-import { DEFAULT_DATE_RANGE, DEFAULT_FORECAST_AMOUNT } from './constants';
+import {
+  CHART_CURRENT_COLOR,
+  CHART_FLUCTUATION_COLOR, CHART_FORECAST_COLOR,
+  DEFAULT_DATE_RANGE,
+  DEFAULT_FORECAST_AMOUNT,
+} from './constants';
 
 export default {
   name: 'GraphModal',
@@ -49,28 +54,61 @@ export default {
 
       return this.graphData.substances.find(({ name }) => name === this.modalTab);
     },
+    currentActiveSubstanceFluctuationDates() {
+      if (!this.currentActiveSubstance) {
+        return [];
+      }
+
+      return this.currentActiveSubstance.fluctuations.map(({ date }) => date);
+    },
+    pointsColor() {
+      return this.currentActiveSubstance?.data.map(({ date }) => {
+        if (this.currentActiveSubstanceFluctuationDates.includes(date)) {
+          return CHART_FLUCTUATION_COLOR;
+        }
+
+        return CHART_CURRENT_COLOR;
+      });
+    },
     chartData() {
       if (!this.graphData) {
         return null;
       }
       let previousDay = null;
+      // forecast
+      // const lastValue = this.currentActiveSubstance?.data.at(-1).value;
+      // const forecastNaNValues = this.currentActiveSubstance?.data.map(() => Number.NaN);
+      // forecastNaNValues.pop();
       return {
-        labels: this.currentActiveSubstance?.data.map(({ date }) => {
-          const currentDay = parseISO(date);
-          if (!previousDay || !isSameDay(previousDay, currentDay)) {
-            previousDay = currentDay;
-            return format(parseISO(date), 'dd.MM HH:mm');
-          }
+        labels: [
+          ...this.currentActiveSubstance?.data.map(({ date }) => {
+            const currentDay = parseISO(date);
+            if (!previousDay || !isSameDay(previousDay, currentDay)) {
+              previousDay = currentDay;
+              return format(parseISO(date), 'dd.MM HH:mm');
+            }
 
-          return format(currentDay, 'HH:mm');
-        }),
+            return format(currentDay, 'HH:mm');
+          }), ['2020-10-22'],
+        ],
         datasets: [
           {
             label: this.currentActiveSubstance?.name || 'Данных нет',
             backgroundColor: '#FFFFFF00',
             data: this.currentActiveSubstance?.data.map(({ value }) => value),
-            borderColor: 'rgb(48,112,76)',
+            borderColor: CHART_CURRENT_COLOR,
+            pointBackgroundColor: this.pointsColor,
+            pointBorderColor: this.pointsColor,
           },
+          // forecast
+          // {
+          //   label: 'Предсказание',
+          //   backgroundColor: '#FFFFFF00',
+          //   data: [...forecastNaNValues, lastValue, .25],
+          //   borderColor: CHART_FORECAST_COLOR,
+          //   pointBackgroundColor: CHART_FORECAST_COLOR,
+          //   pointBorderColor: CHART_FORECAST_COLOR,
+          // },
         ],
       };
     },

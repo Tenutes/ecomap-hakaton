@@ -13,3 +13,7 @@ export const DEFAULT_DATE_RANGE = [
   new Date(2020, 9, 18).getTime(),
   new Date(2020, 9, 19).getTime(),
 ];
+
+export const CHART_CURRENT_COLOR = 'rgb(48,112,76)';
+export const CHART_FLUCTUATION_COLOR = 'rgb(140,21,21)';
+export const CHART_FORECAST_COLOR = 'rgb(5,36,143)';
