@@ -89,7 +89,7 @@ export default {
             }
 
             return format(currentDay, 'HH:mm');
-          }), ['2020-10-22'],
+          }),
         ],
         datasets: [
           {

@@ -28,11 +28,13 @@ export default {
   methods: {
     async selectStation(id) {
       const { data: stationData } = await StationService.getStationById(id);
+      this.modalVisible = false;
       this.selectedStation = stationData;
     },
 
     async selectNewStation(coords) {
       const { data: stationInfo } = await StationService.getNewStation(coords);
+      this.modalVisible = false;
       this.newPointInfo = { ...stationInfo, ...coords };
     },
 
