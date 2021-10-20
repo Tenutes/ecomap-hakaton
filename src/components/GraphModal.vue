@@ -127,18 +127,8 @@ export default {
         </el-date-picker>
       </div>
       <div class="modal__date-block">
-        <p>Длительность предсказания</p>
-        <el-time-select
-          v-model="forecastAmount"
-          :picker-options="{
-              start: '00:20',
-              step: '00:20',
-              end: '24:00'
-            }"
-          :clearable="false"
-          placeholder="Выберите время"
-        >
-        </el-time-select>
+        <p>Длительность предсказания (ч.)</p>
+        <el-input-number :min="1" :max="24" v-model="forecastAmount"/>
       </div>
       <div class="modal__date-block">
         <p>&nbsp;</p>
