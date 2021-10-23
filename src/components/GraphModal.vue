@@ -6,7 +6,7 @@ import { LAST_DATA_UPDATE } from '../config';
 import LineChart from './LineChart';
 import {
   CHART_CURRENT_COLOR,
-  CHART_FLUCTUATION_COLOR,
+  CHART_FLUCTUATION_COLOR, CHART_SPUTNIK_COLOR,
   DEFAULT_DATE_RANGE,
   DEFAULT_FORECAST_AMOUNT,
 } from './constants';
@@ -41,21 +41,55 @@ export default {
     },
   },
   computed: {
+    modalTitle() {
+      return this.graphData?.station?.name || 'Загружаем';
+    },
+    isChanged() {
+      return this.chartDateRange !== this.dump.chartDateRange ||
+        this.forecastAmount !== this.dump.forecastAmount;
+    },
     chartOptions() {
       return {
         responsive: true,
         maintainAspectRatio: false,
         annotation: this.chartPDKLine,
         scales: {
-          yAxes: [{
-            beginAtZero: true,
-          }],
+          yAxes: [
+            {
+              beginAtZero: true,
+            },
+          ],
         },
       };
     },
-    isChanged() {
-      return this.chartDateRange !== this.dump.chartDateRange ||
-        this.forecastAmount !== this.dump.forecastAmount;
+    chartData() {
+      if (!this.graphData) {
+        return null;
+      }
+
+      return {
+        labels: [
+          ...this.chartCurrent.labels,
+          ...this.chartForecast.labels,
+        ],
+        datasets: this.chartDatasets,
+      };
+    },
+    chartDatasets() {
+      const datasets = [];
+      if (this.chartCurrent.labels.length) {
+        datasets.push(this.chartCurrent.datasets);
+      }
+
+      if (this.chartForecast.labels.length) {
+        datasets.push(this.chartForecast.datasets);
+      }
+
+      if (this.chartSputnik.data.length) {
+        datasets.push(this.chartSputnik);
+      }
+
+      return datasets;
     },
     currentActiveSubstance() {
       if (!this.graphData) {
@@ -82,7 +116,7 @@ export default {
     },
     chartPDKLine() {
       const pdkValue = this.graphData.pdk[this.currentActiveSubstance.name];
-      const yAdjust = pdkValue === 0 ? -12 : 12;
+      const yAdjust = pdkValue <= this.minGraphData ? -12 : 12;
       return {
         annotations: [
           {
@@ -107,6 +141,9 @@ export default {
         ],
       };
     },
+    minGraphData() {
+      return Math.min(...this.chartDatasets.flatMap(({ data }) => data));
+    },
     chartCurrent() {
       let previousDay = null;
       return {
@@ -119,50 +156,33 @@ export default {
 
           return format(currentDay, 'HH:mm');
         }) || [],
-        datasets:
-          {
-            label: this.currentActiveSubstance?.name || 'Данных нет',
-            fill: false,
-            data: this.currentActiveSubstance?.data.map(({ value }) => value),
-            borderColor: CHART_CURRENT_COLOR,
-            pointBackgroundColor: this.pointsColor,
-            pointBorderColor: this.pointsColor,
-            lineTension: .25,
-          },
+        datasets: {
+          label: this.currentActiveSubstance?.name || 'Данных нет',
+          fill: false,
+          data: this.currentActiveSubstance?.data.map(({ value }) => value),
+          borderColor: CHART_CURRENT_COLOR,
+          pointBackgroundColor: this.pointsColor,
+          pointBorderColor: this.pointsColor,
+          lineTension: .25,
+        },
       };
     },
     chartForecast() {
       return {
         labels: [],
-        datasets: null,
+        datasets: [],
       };
     },
-    chartDatasets() {
-      const datasets = [];
-      if (this.chartCurrent.labels.length) {
-        datasets.push(this.chartCurrent.datasets);
-      }
-      if (this.chartForecast.labels.length) {
-        datasets.push(this.chartForecast.datasets);
-      }
-
-      return datasets;
-    },
-    chartData() {
-      if (!this.graphData) {
-        return null;
-      }
-
+    chartSputnik() {
       return {
-        labels: [
-          ...this.chartCurrent.labels,
-          ...this.chartForecast.labels,
-        ],
-        datasets: this.chartDatasets,
+        label: 'Данные со спутника',
+        fill: false,
+        data: this.currentActiveSubstance?.sputnik_data?.map(({ value }) => value) || [],
+        borderColor: CHART_SPUTNIK_COLOR,
+        pointBackgroundColor: CHART_SPUTNIK_COLOR,
+        pointBorderColor: CHART_SPUTNIK_COLOR,
+        lineTension: .25,
       };
-    },
-    modalTitle() {
-      return this.graphData?.station?.name || 'Загружаем';
     },
   },
   methods: {
