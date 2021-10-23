@@ -12,9 +12,6 @@ export default {
     getGraph() {
       this.$emit('get-graph', this.station);
     },
-    getMapPolygon() {
-      this.$emit('get-polygon', this.station);
-    },
   },
 };
 </script>
@@ -41,7 +38,6 @@ export default {
     </div>
     <div class="sidebar__block sidebar__block--padded">
       <el-button type="success" @click="getGraph">Посмотреть график</el-button>
-      <el-button type="primary" @click="getMapPolygon">Посмотреть красоту</el-button>
     </div>
   </template>
   <template v-else>

@@ -89,12 +89,6 @@ export default {
 
       await this.loadChartData(station, params);
     },
-
-    async getPolygon(station) {
-      // eslint-disable-next-line
-      alert('Хрен тобi');
-      console.log(station);
-    },
     closeModal() {
       this.modalVisible = false;
       setTimeout(() => {
@@ -120,7 +114,6 @@ export default {
     <sidebar
       :station="selectedStation"
       @get-graph="getGraph"
-      @get-polygon="getPolygon"
     />
   </div>
   <graph-modal

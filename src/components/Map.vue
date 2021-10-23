@@ -1,8 +1,10 @@
 <script>
 import { yandexMap, ymapMarker } from 'vue-yandex-maps';
 
+import PolygonImage from '../assets/map.png';
 import NewPointImage from '../assets/point-new.png';
 import PointImage from '../assets/point.png';
+import { LAST_DATA_UPDATE } from '../config';
 
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_SETTINGS, MAP_OPTIONS } from './constants';
 
@@ -35,8 +37,14 @@ export default {
         imageSize: [32, 32],
         imageOffset: [-16, -16],
       },
+      polygon: {
+        visible: false,
+        coords: [[[55.85, 37.85], [55.65, 37.85], [55.65, 37.45], [55.85, 37.45]]],
+        options: { fill: true, fillImageHref: PolygonImage, fillOpacity: .75 },
+      },
     };
   },
+  LAST_DATA_UPDATE,
   MAP_SETTINGS,
   MAP_OPTIONS,
   MAP_DEFAULT_CENTER,
@@ -64,33 +72,56 @@ export default {
     togglePointChoose() {
       this.choosePoint = !this.choosePoint;
     },
+    toggleMapPolygon() {
+      this.polygon.visible = !this.polygon.visible;
+    },
   },
 };
 </script>
 
 <template>
 <div class="map" v-loading="!map">
-  <el-button
-    :disabled="!map"
-    type="warning"
-    class="map__button"
-    @click="togglePointChoose"
-    :icon="choosePoint ? 'el-icon-close' : ''"
-    :circle="choosePoint"
-  >
-    <template v-if="!choosePoint">Выбрать произвольную точку</template>
-  </el-button>
+  <div class="map__buttons">
+    <div>
+      <el-tooltip :content="`На ${$options.LAST_DATA_UPDATE}`">
+        <el-button type="primary" @click="toggleMapPolygon">{{ polygon.visible ? 'Спрятать' : 'Показать' }}
+          карту распространения CO
+        </el-button>
+      </el-tooltip>
+      <el-button
+        :disabled="!map"
+        type="warning"
+        class="map__button"
+        @click="togglePointChoose"
+        :icon="choosePoint ? 'el-icon-close' : ''"
+        :circle="choosePoint"
+      >
+        <template v-if="!choosePoint">Выбрать произвольную точку</template>
+      </el-button>
+    </div>
+    <div v-if="polygon.visible" class="polygon-legend">
+      <p><span style="background: #fde723"></span> - малая концентрация</p>
+      <p><span style="background: #440054"></span> - большая концентрация</p>
+    </div>
+  </div>
   <div class="map__container" :class="{'choose-point': choosePoint}">
     <yandex-map
       :settings="$options.MAP_SETTINGS"
       :coords="$options.MAP_DEFAULT_CENTER"
       :zoom="$options.MAP_DEFAULT_ZOOM"
-      :behaviors="[]"
       :controls="[]"
+      :behaviors="[]"
       :options="$options.MAP_OPTIONS"
       @map-was-initialized="setMap"
       @click="mapClick"
     >
+      <ymap-marker
+        v-if="polygon.visible"
+        marker-id="polygon"
+        marker-type="polygon"
+        :coords="polygon.coords"
+        :options="polygon.options"
+      />
       <ymap-marker
         v-for="point in points"
         :key="point.id"
@@ -144,11 +175,37 @@ export default {
     }
   }
 
-  &__button {
+  &__buttons {
     position: absolute;
     top: 15px;
     left: 15px;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.polygon-legend {
+  padding: 10px 15px;
+  margin-top: 10px;
+  background: rgba(white, .85);
+  box-shadow: 0 5px 10px rgba(black, .14);
+  border-radius: 5px;
+
+  p {
+    margin-bottom: 5px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    span {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+    }
   }
 }
 </style>
