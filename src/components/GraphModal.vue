@@ -6,7 +6,7 @@ import { LAST_DATA_UPDATE, MAX_DATA_LENGTH } from '../config';
 import LineChart from './LineChart';
 import {
   CHART_CURRENT_COLOR,
-  CHART_FLUCTUATION_COLOR, CHART_SPUTNIK_COLOR,
+  CHART_FLUCTUATION_COLOR, CHART_FORECAST_COLOR, CHART_SPUTNIK_COLOR,
   DEFAULT_DATE_RANGE,
   DEFAULT_FORECAST_AMOUNT,
 } from './constants';
@@ -152,14 +152,16 @@ export default {
       };
     },
     minGraphData() {
-      return Math.min(...this.chartDatasets.flatMap(({ data }) => data));
+      return Math.min(...this.chartDatasets.flatMap(({ data }) => data).filter(data => !Number.isNaN(data)));
     },
     chartCurrent() {
       let previousDay = null;
+
       return {
         labels: this.currentActiveSubstanceFilteredData.map(({ date }) => {
           const currentDay = parseISO(date);
-          if (!previousDay || !isSameDay(previousDay, currentDay) || this.currentActiveSubstanceFilteredData.length >= MAX_DATA_LENGTH) {
+          if (!previousDay || !isSameDay(previousDay, currentDay) ||
+            this.currentActiveSubstanceFilteredData.length >= MAX_DATA_LENGTH) {
             previousDay = currentDay;
             return format(parseISO(date), 'dd.MM HH:mm');
           }
@@ -178,9 +180,36 @@ export default {
       };
     },
     chartForecast() {
+      const forecast = this.currentActiveSubstance?.forecast || [];
+      if (!forecast.length) {
+        return { labels: [], datasets: {} };
+      }
+
+      let previousDay = null;
+
       return {
-        labels: [],
-        datasets: [],
+        labels: forecast.map(({ date }) => {
+          const currentDay = parseISO(date);
+          if (!previousDay || !isSameDay(previousDay, currentDay)) {
+            previousDay = currentDay;
+            return format(parseISO(date), 'dd.MM HH:mm');
+          }
+
+          return format(currentDay, 'HH:mm');
+        }),
+        datasets: {
+          label: 'Прогноз',
+          fill: false,
+          data: [
+            ...(new Array(this.chartCurrent.datasets.data.length - 1).fill(Number.NaN)),
+            this.chartCurrent.datasets.data.at(-1),
+            ...forecast.map(({ value }) => value),
+          ],
+          borderColor: CHART_FORECAST_COLOR,
+          pointBackgroundColor: CHART_FORECAST_COLOR,
+          pointBorderColor: CHART_FORECAST_COLOR,
+          lineTension: .25,
+        },
       };
     },
     chartSputnik() {
