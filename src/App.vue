@@ -1,10 +1,11 @@
 <script>
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 
 import GraphModal from './components/GraphModal';
 import YaMap from './components/Map';
 import Sidebar from './components/Sidebar';
-import { LAST_DATA_UPDATE } from './config';
+import { DEFAULT_FORECAST_AMOUNT } from './components/constants';
+import { END_DATE, GRAPH_FORMAT, LAST_DATA_UPDATE, START_DATE } from './config';
 import GraphService from './services/GraphService';
 import StationService from './services/StationService';
 
@@ -56,11 +57,11 @@ export default {
 
       const params = {
         station_id: station.id,
-        forecast: 0,
+        forecast: DEFAULT_FORECAST_AMOUNT,
         lat: station.lat,
         lng: station.lng,
-        from_datetime: `${ format(new Date().setFullYear(2020), 'yyyy-MM-dd') }T00:00:00.176Z`,
-        to_datetime: `${ format(addDays(new Date().setFullYear(2020), 1), 'yyyy-MM-dd') }T00:00:00.176Z`,
+        from_datetime: START_DATE,
+        to_datetime: END_DATE,
       };
 
       await this.loadChartData(station, params);
@@ -82,8 +83,8 @@ export default {
         forecast: data.forecast,
         lat: station.lat,
         lng: station.lng,
-        from_datetime: data.time[0],
-        to_datetime: data.time[1],
+        from_datetime: format(data.time[0], GRAPH_FORMAT),
+        to_datetime: format(data.time[1], GRAPH_FORMAT),
       };
 
       await this.loadChartData(station, params);

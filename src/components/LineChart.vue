@@ -17,6 +17,12 @@ export default {
       default: () => ({}),
     },
   },
+  watch:{
+    chartData() {
+      this.$data._chart.destroy();
+      this.renderChart(this.chartData, this.options);
+    },
+  },
   mounted() {
     this.addPlugin(Annotation);
     this.renderChart(this.chartData, this.options);

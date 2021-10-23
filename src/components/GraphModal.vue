@@ -1,7 +1,7 @@
 <script>
 import { format, isSameDay, parseISO, parse, isBefore } from 'date-fns';
 
-import { LAST_DATA_UPDATE } from '../config';
+import { LAST_DATA_UPDATE, MAX_DATA_LENGTH } from '../config';
 
 import LineChart from './LineChart';
 import {
@@ -105,8 +105,17 @@ export default {
 
       return this.currentActiveSubstance.fluctuations.map(({ date }) => date);
     },
+    currentActiveSubstanceFilteredData() {
+      const currentDataLength = this.currentActiveSubstance?.data?.length;
+      if (!currentDataLength) {
+        return [];
+      }
+      const filterEveryIndex = Math.floor(Math.max(currentDataLength / MAX_DATA_LENGTH, 1));
+      const filterByIndex = (_, i) => i % filterEveryIndex === 0;
+      return this.currentActiveSubstance?.data.filter(filterByIndex);
+    },
     pointsColor() {
-      return this.currentActiveSubstance?.data.map(({ date }) => {
+      return this.currentActiveSubstanceFilteredData.map(({ date }) => {
         if (this.currentActiveSubstanceFluctuationDates.includes(date)) {
           return CHART_FLUCTUATION_COLOR;
         }
@@ -120,6 +129,7 @@ export default {
       return {
         annotations: [
           {
+            _id: this.currentActiveSubstance?.data?.length || 1,
             type: 'line',
             mode: 'horizontal',
             scaleID: 'y-axis-0',
@@ -147,9 +157,9 @@ export default {
     chartCurrent() {
       let previousDay = null;
       return {
-        labels: this.currentActiveSubstance?.data?.map(({ date }) => {
+        labels: this.currentActiveSubstanceFilteredData.map(({ date }) => {
           const currentDay = parseISO(date);
-          if (!previousDay || !isSameDay(previousDay, currentDay)) {
+          if (!previousDay || !isSameDay(previousDay, currentDay) || this.currentActiveSubstanceFilteredData.length >= MAX_DATA_LENGTH) {
             previousDay = currentDay;
             return format(parseISO(date), 'dd.MM HH:mm');
           }
@@ -159,7 +169,7 @@ export default {
         datasets: {
           label: this.currentActiveSubstance?.name || 'Данных нет',
           fill: false,
-          data: this.currentActiveSubstance?.data.map(({ value }) => value),
+          data: this.currentActiveSubstanceFilteredData.map(({ value }) => value),
           borderColor: CHART_CURRENT_COLOR,
           pointBackgroundColor: this.pointsColor,
           pointBorderColor: this.pointsColor,
@@ -201,7 +211,7 @@ export default {
       });
     },
     isDateDisabled(date) {
-      const maxDate = parse(LAST_DATA_UPDATE, 'dd.MM.yyyy HH:mm', new Date());
+      const maxDate = parse(LAST_DATA_UPDATE, 'dd.MM.yyyy HH:mm:ss', new Date());
       return !(isSameDay(maxDate, date) || isBefore(date, maxDate));
     },
   },

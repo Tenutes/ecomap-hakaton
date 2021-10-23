@@ -1,3 +1,7 @@
+import { getTime, parseISO } from 'date-fns';
+
+import { END_DATE, START_DATE } from '../config';
+
 export const MAP_SETTINGS = {
   lang: 'ru_RU',
   coordorder: 'latlong',
@@ -15,10 +19,7 @@ export const MAP_OPTIONS = {
 };
 
 export const DEFAULT_FORECAST_AMOUNT = 1;
-export const DEFAULT_DATE_RANGE = [
-  new Date(2020, 9, 18).getTime(),
-  new Date(2020, 9, 19).getTime(),
-];
+export const DEFAULT_DATE_RANGE = [getTime(parseISO(START_DATE)), getTime(parseISO(END_DATE))];
 
 export const CHART_CURRENT_COLOR = 'rgb(48,112,76)';
 export const CHART_FLUCTUATION_COLOR = 'rgb(140,21,21)';
