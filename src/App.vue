@@ -4,6 +4,7 @@ import { format, addDays } from 'date-fns';
 import GraphModal from './components/GraphModal';
 import YaMap from './components/Map';
 import Sidebar from './components/Sidebar';
+import { LAST_DATA_UPDATE } from './config';
 import GraphService from './services/GraphService';
 import StationService from './services/StationService';
 
@@ -13,13 +14,13 @@ export default {
   data() {
     return {
       points: [],
+      newPoints: [],
       selectedStation: null,
-      newPointInfo: null,
       graphData: null,
       modalVisible: false,
     };
   },
-
+  LAST_DATA_UPDATE,
   async mounted() {
     const { data } = await StationService.getStations();
     this.points = data.stations;
@@ -29,7 +30,7 @@ export default {
     async selectStation({ point, is_new }) {
       this.modalVisible = false;
       if (is_new) {
-        this.selectedStation = this.newPointInfo;
+        this.selectedStation = this.newPoints[point.id];
       } else {
         const { data: stationData } = await StationService.getStationById(point.id);
         this.selectedStation = stationData;
@@ -39,9 +40,15 @@ export default {
     async selectNewStation(coords) {
       const { data: stationInfo } = await StationService.getNewStation(coords);
       this.modalVisible = false;
-      const selectedStation = { ...stationInfo, ...coords };
+      const pointId = this.newPoints.length;
+
+      const selectedStation = {
+        ...stationInfo, ...coords,
+        id: pointId,
+        name: `Произвольная станция #${ pointId + 1 }`,
+      };
       this.selectedStation = selectedStation;
-      this.newPointInfo = selectedStation;
+      this.newPoints.push(selectedStation);
     },
 
     async getGraph(station) {
@@ -83,6 +90,12 @@ export default {
       alert('Хрен тобi');
       console.log(station);
     },
+    closeModal() {
+      this.modalVisible = false;
+      setTimeout(() => {
+        this.graphData = null;
+      }, 200)
+    },
   },
 };
 </script>
@@ -90,11 +103,12 @@ export default {
 <template>
 <div class="app">
   <div class="app__map">
+    <p class="app__last-date">Данные от: {{ $options.LAST_DATA_UPDATE }}</p>
     <ya-map
       @select-station="selectStation"
       @select-new-station="selectNewStation"
       :points="points"
-      :new-point="newPointInfo"
+      :new-points="newPoints"
     />
   </div>
   <div class="app__info">
@@ -104,7 +118,12 @@ export default {
       @get-polygon="getPolygon"
     />
   </div>
-  <graph-modal :graph-data="graphData" :modal-visible.sync="modalVisible" @update-chart="updateChart"/>
+  <graph-modal
+    :graph-data="graphData"
+    :modal-visible="modalVisible"
+    @update-chart="updateChart"
+    @close="closeModal"
+  />
 </div>
 </template>
 
@@ -128,6 +147,7 @@ body {
 
   &__map {
     width: 100%;
+    position: relative;
   }
 
   &__info {
@@ -136,6 +156,18 @@ body {
     z-index: 2;
     width: 400px;
     transition: .25s;
+  }
+
+  &__last-date {
+    font-size: 14px;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 2000;
+    padding: 5px 10px;
+    background: rgba(white, .95);
+    border-radius: 5px;
+    box-shadow: 0 10px 15px rgba(black, .14)
   }
 }
 </style>

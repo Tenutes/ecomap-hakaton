@@ -10,9 +10,9 @@ export default {
   name: 'Map',
   components: { yandexMap, ymapMarker },
   props: {
-    newPoint: {
-      type: Object,
-      default: null,
+    newPoints: {
+      type: Array,
+      default: [],
     },
     points: {
       type: Array,
@@ -99,7 +99,8 @@ export default {
         @click="e => pointClick(e, point)"
       />
       <ymap-marker
-        v-if="newPoint"
+        v-for="newPoint in newPoints"
+        :key="'n' + newPoint.id"
         :marker-id="'n' + newPoint.id"
         :coords="[newPoint.lat, newPoint.lng]"
         :hint-content="newPoint.name"

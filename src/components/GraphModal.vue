@@ -1,5 +1,7 @@
 <script>
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay, parseISO, parse, isBefore } from 'date-fns';
+
+import { LAST_DATA_UPDATE } from '../config';
 
 import LineChart from './LineChart';
 import {
@@ -70,47 +72,62 @@ export default {
         return CHART_CURRENT_COLOR;
       });
     },
-    chartData() {
-      if (!this.graphData) {
-        return null;
-      }
+    chartCurrent() {
       let previousDay = null;
-      // forecast
-      // const lastValue = this.currentActiveSubstance?.data.at(-1).value;
-      // const forecastNaNValues = this.currentActiveSubstance?.data.map(() => Number.NaN);
-      // forecastNaNValues.pop();
       return {
-        labels: [
-          ...this.currentActiveSubstance?.data.map(({ date }) => {
-            const currentDay = parseISO(date);
-            if (!previousDay || !isSameDay(previousDay, currentDay)) {
-              previousDay = currentDay;
-              return format(parseISO(date), 'dd.MM HH:mm');
-            }
+        labels: this.currentActiveSubstance?.data?.map(({ date }) => {
+          const currentDay = parseISO(date);
+          if (!previousDay || !isSameDay(previousDay, currentDay)) {
+            previousDay = currentDay;
+            return format(parseISO(date), 'dd.MM HH:mm');
+          }
 
-            return format(currentDay, 'HH:mm');
-          }),
-        ],
-        datasets: [
+          return format(currentDay, 'HH:mm');
+        }) || [],
+        datasets:
           {
             label: this.currentActiveSubstance?.name || 'Данных нет',
-            backgroundColor: '#FFFFFF00',
+            fill: false,
             data: this.currentActiveSubstance?.data.map(({ value }) => value),
             borderColor: CHART_CURRENT_COLOR,
             pointBackgroundColor: this.pointsColor,
             pointBorderColor: this.pointsColor,
+            lineTension: .25,
           },
-          // forecast
-          // {
-          //   label: 'Предсказание',
-          //   backgroundColor: '#FFFFFF00',
-          //   data: [...forecastNaNValues, lastValue, .25],
-          //   borderColor: CHART_FORECAST_COLOR,
-          //   pointBackgroundColor: CHART_FORECAST_COLOR,
-          //   pointBorderColor: CHART_FORECAST_COLOR,
-          // },
-        ],
       };
+    },
+    chartForecast() {
+      return {
+        labels: [],
+        datasets: null,
+      };
+    },
+    chartDatasets() {
+      const datasets = [];
+      if (this.chartCurrent.labels.length) {
+        datasets.push(this.chartCurrent.datasets);
+      }
+      if (this.chartForecast.labels.length) {
+        datasets.push(this.chartForecast.datasets);
+      }
+
+      return datasets;
+    },
+    chartData() {
+      if (!this.graphData) {
+        return null;
+      }
+
+      return {
+        labels: [
+          ...this.chartCurrent.labels,
+          ...this.chartForecast.labels,
+        ],
+        datasets: this.chartDatasets,
+      };
+    },
+    modalTitle() {
+      return this.graphData?.station?.name || 'Загружаем';
     },
   },
   methods: {
@@ -128,6 +145,10 @@ export default {
         },
       });
     },
+    isDateDisabled(date) {
+      const maxDate = parse(LAST_DATA_UPDATE, 'dd.MM.yyyy HH:mm', new Date());
+      return !(isSameDay(maxDate, date) || isBefore(date, maxDate));
+    },
   },
 };
 </script>
@@ -135,10 +156,11 @@ export default {
 <template>
 <el-dialog
   class="modal"
-  :title="((graphData || {}).station || {}).name || 'Загружаем'"
-  :visible.sync="modalVisible"
+  :title="modalTitle"
+  :visible="modalVisible"
+  @close="$emit('close')"
 >
-  <el-skeleton v-if="!graphData" :rows="6" animated/>
+  <el-skeleton v-if="!graphData" :rows="10" animated/>
   <template v-else>
     <el-tabs v-if="graphData" v-model="modalTab">
       <el-tab-pane
@@ -149,7 +171,8 @@ export default {
       />
     </el-tabs>
     <div class="modal__chart">
-      <LineChart :chart-data="chartData" :options="chartOptions"/>
+      <LineChart v-if="chartDatasets.length" :chart-data="chartData" :options="chartOptions"/>
+      <p class="modal__chart-empty" v-else>Данных по данной станции на данной момент нет</p>
     </div>
     <div class="modal__date">
       <div class="modal__date-block">
@@ -160,6 +183,7 @@ export default {
           range-separator="до"
           start-placeholder="От"
           end-placeholder="До"
+          :picker-options="{disabledDate: isDateDisabled}"
           :clearable="false"
         >
         </el-date-picker>
@@ -192,6 +216,11 @@ export default {
   &__chart {
     max-width: 100%;
     margin-bottom: 25px;
+  }
+
+  &__chart-empty {
+    font-weight: bold;
+    font-size: 20px;
   }
 
   &__date {
