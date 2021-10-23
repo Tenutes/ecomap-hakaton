@@ -47,6 +47,7 @@ export default {
         ...stationInfo, ...coords,
         id: pointId,
         name: `Произвольная станция #${ pointId + 1 }`,
+        is_new_station: true,
       };
       this.selectedStation = selectedStation;
       this.newPoints.push(selectedStation);

@@ -1,14 +1,16 @@
 <script>
 import { format, isSameDay, parseISO, parse, isBefore } from 'date-fns';
 
-import { LAST_DATA_UPDATE, MAX_DATA_LENGTH } from '../config';
+import { LAST_DATA_UPDATE, MAX_DATA_LENGTH, MIN_DATE_NEW_POINT } from '../config';
 
 import LineChart from './LineChart';
 import {
   CHART_CURRENT_COLOR,
-  CHART_FLUCTUATION_COLOR, CHART_FORECAST_COLOR, CHART_SPUTNIK_COLOR,
+  CHART_FLUCTUATION_COLOR,
+  CHART_FORECAST_COLOR,
+  CHART_SPUTNIK_COLOR,
   DEFAULT_DATE_RANGE,
-  DEFAULT_FORECAST_AMOUNT,
+  DEFAULT_FORECAST_AMOUNT, TYPE_MAIN, TYPE_NEAR_STATION,
 } from './constants';
 
 export default {
@@ -38,6 +40,16 @@ export default {
   watch: {
     graphData(n) {
       this.modalTab = n?.substances?.[0]?.name;
+    },
+    modalVisible(n) {
+      if (!n) {
+        this.chartDateRange = DEFAULT_DATE_RANGE;
+        this.forecastAmount = DEFAULT_FORECAST_AMOUNT;
+        this.dump = {
+          chartDateRange: DEFAULT_DATE_RANGE,
+          forecastAmount: DEFAULT_FORECAST_AMOUNT,
+        };
+      }
     },
   },
   computed: {
@@ -85,10 +97,9 @@ export default {
         datasets.push(this.chartForecast.datasets);
       }
 
-      if (this.chartSputnik.data.length) {
-        datasets.push(this.chartSputnik);
+      if (this.mainChartData.type === TYPE_NEAR_STATION && this.chartSputnikData.datasets.data.length) {
+        datasets.push(this.chartSputnikData.datasets);
       }
-
       return datasets;
     },
     currentActiveSubstance() {
@@ -106,13 +117,13 @@ export default {
       return this.currentActiveSubstance.fluctuations.map(({ date }) => date);
     },
     currentActiveSubstanceFilteredData() {
-      const currentDataLength = this.currentActiveSubstance?.data?.length;
-      if (!currentDataLength) {
+      const currentData = this.mainChartData.data;
+      if (!currentData.length) {
         return [];
       }
-      const filterEveryIndex = Math.floor(Math.max(currentDataLength / MAX_DATA_LENGTH, 1));
+      const filterEveryIndex = Math.floor(Math.max(currentData.length / MAX_DATA_LENGTH, 1));
       const filterByIndex = (_, i) => i % filterEveryIndex === 0;
-      return this.currentActiveSubstance?.data.filter(filterByIndex);
+      return this.mainChartData.data.filter(filterByIndex);
     },
     pointsColor() {
       return this.currentActiveSubstanceFilteredData.map(({ date }) => {
@@ -154,24 +165,50 @@ export default {
     minGraphData() {
       return Math.min(...this.chartDatasets.flatMap(({ data }) => data).filter(data => !Number.isNaN(data)));
     },
-    chartCurrent() {
-      let previousDay = null;
+    mainChartData() {
+      if (!this.currentActiveSubstance) {
+        return {
+          type: null,
+          data: [],
+        };
+      }
+      const { data, near_station_data } = this.currentActiveSubstance;
+      const isNearStationData = near_station_data.length;
 
       return {
-        labels: this.currentActiveSubstanceFilteredData.map(({ date }) => {
-          const currentDay = parseISO(date);
-          if (!previousDay || !isSameDay(previousDay, currentDay) ||
-            this.currentActiveSubstanceFilteredData.length >= MAX_DATA_LENGTH) {
-            previousDay = currentDay;
-            return format(parseISO(date), 'dd.MM HH:mm');
-          }
+        type: isNearStationData ? TYPE_NEAR_STATION : TYPE_MAIN,
+        data: isNearStationData ? near_station_data : data,
+      };
+    },
+    currentSubstanceLabels() {
+      let previousDay = null;
+      return this.currentActiveSubstanceFilteredData.map(({ date }) => {
+        const currentDay = parseISO(date);
+        if (!previousDay || !isSameDay(previousDay, currentDay) ||
+          this.currentActiveSubstanceFilteredData.length >= MAX_DATA_LENGTH) {
+          previousDay = currentDay;
+          return format(parseISO(date), 'dd.MM HH:mm');
+        }
 
-          return format(currentDay, 'HH:mm');
-        }) || [],
+        return format(currentDay, 'HH:mm');
+      }) || [];
+    },
+    chartCurrent() {
+      const isNearStationData = this.mainChartData.type === TYPE_NEAR_STATION;
+      const prefix = isNearStationData
+        ? 'Данные со станции: ' + this.graphData.station.near_station_name
+        : '';
+      const datasetLabel = prefix || this.currentActiveSubstance?.name || 'Данных нет';
+
+      return {
+        labels: this.currentSubstanceLabels,
         datasets: {
-          label: this.currentActiveSubstance?.name || 'Данных нет',
+          label: datasetLabel,
           fill: false,
           data: this.currentActiveSubstanceFilteredData.map(({ value }) => value),
+          borderWidth: 1,
+          pointBorderWidth: 1,
+          pointRadius: 2,
           borderColor: CHART_CURRENT_COLOR,
           pointBackgroundColor: this.pointsColor,
           pointBorderColor: this.pointsColor,
@@ -184,9 +221,7 @@ export default {
       if (!forecast.length) {
         return { labels: [], datasets: {} };
       }
-
       let previousDay = null;
-
       return {
         labels: forecast.map(({ date }) => {
           const currentDay = parseISO(date);
@@ -205,22 +240,31 @@ export default {
             this.chartCurrent.datasets.data.at(-1),
             ...forecast.map(({ value }) => value),
           ],
+          borderWidth: 1,
+          pointRadius: 2,
           borderColor: CHART_FORECAST_COLOR,
           pointBackgroundColor: CHART_FORECAST_COLOR,
           pointBorderColor: CHART_FORECAST_COLOR,
+          pointBorderWidth: 2,
           lineTension: .25,
         },
       };
     },
-    chartSputnik() {
+    chartSputnikData() {
       return {
-        label: 'Данные со спутника',
-        fill: false,
-        data: this.currentActiveSubstance?.sputnik_data?.map(({ value }) => value) || [],
-        borderColor: CHART_SPUTNIK_COLOR,
-        pointBackgroundColor: CHART_SPUTNIK_COLOR,
-        pointBorderColor: CHART_SPUTNIK_COLOR,
-        lineTension: .25,
+        labels: this.currentSubstanceLabels,
+        datasets: {
+          label: 'Данные со спутника: ' + this.currentActiveSubstance?.name,
+          fill: false,
+          data: this.currentActiveSubstance?.data?.map(({ value }) => value) || [],
+          borderWidth: 1,
+          pointRadius: 2,
+          borderColor: CHART_SPUTNIK_COLOR,
+          pointBackgroundColor: CHART_SPUTNIK_COLOR,
+          pointBorderColor: CHART_SPUTNIK_COLOR,
+          pointBorderWidth: 2,
+          lineTension: .25,
+        },
       };
     },
   },
@@ -240,8 +284,11 @@ export default {
       });
     },
     isDateDisabled(date) {
+      const { is_new_station } = this.graphData.station;
       const maxDate = parse(LAST_DATA_UPDATE, 'dd.MM.yyyy HH:mm:ss', new Date());
-      return !(isSameDay(maxDate, date) || isBefore(date, maxDate));
+      const minDate = parse(MIN_DATE_NEW_POINT, 'dd.MM.yyyy HH:mm:ss', new Date());
+      return !(isSameDay(maxDate, date) || isBefore(date, maxDate)) ||
+        (is_new_station && isBefore(date, minDate));
     },
   },
 };

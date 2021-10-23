@@ -1,5 +1,5 @@
 <script>
-import Annotation from 'chartjs-plugin-annotation';
+import AnnotationPlugin from 'chartjs-plugin-annotation';
 import { Line, mixins } from 'vue-chartjs';
 
 const { reactiveProp } = mixins;
@@ -24,7 +24,7 @@ export default {
     },
   },
   mounted() {
-    this.addPlugin(Annotation);
+    this.addPlugin(AnnotationPlugin);
     this.renderChart(this.chartData, this.options);
   },
 };

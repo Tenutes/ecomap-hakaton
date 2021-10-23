@@ -30,7 +30,7 @@ export default {
       </div>
     </div>
     <div class="sidebar__block" v-if="station.near_station_substances">
-      <el-divider content-position="left">Концентрация веществ на ближайшей станции</el-divider>
+      <el-divider content-position="left">На ближайшей станции: {{ station.near_station_name }}</el-divider>
       <div v-for="({name, value}, index) in station.near_station_substances" :key="index" class="sidebar__substance">
         <p class="sidebar__substance-name">{{ name }}</p>
         <p class="sidebar__substance-value">{{ value }}</p>
