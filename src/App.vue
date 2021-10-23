@@ -68,7 +68,11 @@ export default {
 
     async loadChartData(station, params) {
       const { data } = await GraphService.get(params);
-      this.graphData = { station, substances: data.substances };
+      this.graphData = {
+        station,
+        substances: data.substances,
+        pdk: Object.fromEntries(station.substances.map(({ name, value }) => [name, value])),
+      };
       this.modalTab = this.graphData.substances?.[0]?.name;
     },
 
@@ -94,7 +98,7 @@ export default {
       this.modalVisible = false;
       setTimeout(() => {
         this.graphData = null;
-      }, 200)
+      }, 200);
     },
   },
 };

@@ -7,6 +7,12 @@ export const MAP_SETTINGS = {
 
 export const MAP_DEFAULT_CENTER = [55.755811, 37.617617];
 export const MAP_DEFAULT_ZOOM = 11;
+export const MAP_OPTIONS = {
+  restrictMapArea: [
+    [55.954635, 37.153603],
+    [55.550145, 38.118243],
+  ],
+};
 
 export const DEFAULT_FORECAST_AMOUNT = 1;
 export const DEFAULT_DATE_RANGE = [

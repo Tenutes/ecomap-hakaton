@@ -4,7 +4,7 @@ import { yandexMap, ymapMarker } from 'vue-yandex-maps';
 import NewPointImage from '../assets/point-new.png';
 import PointImage from '../assets/point.png';
 
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_SETTINGS } from './constants';
+import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_SETTINGS, MAP_OPTIONS } from './constants';
 
 export default {
   name: 'Map',
@@ -38,6 +38,7 @@ export default {
     };
   },
   MAP_SETTINGS,
+  MAP_OPTIONS,
   MAP_DEFAULT_CENTER,
   MAP_DEFAULT_ZOOM,
   methods: {
@@ -86,6 +87,7 @@ export default {
       :zoom="$options.MAP_DEFAULT_ZOOM"
       :behaviors="[]"
       :controls="[]"
+      :options="$options.MAP_OPTIONS"
       @map-was-initialized="setMap"
       @click="mapClick"
     >

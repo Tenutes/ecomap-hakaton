@@ -6,7 +6,7 @@ import { LAST_DATA_UPDATE } from '../config';
 import LineChart from './LineChart';
 import {
   CHART_CURRENT_COLOR,
-  CHART_FLUCTUATION_COLOR, CHART_FORECAST_COLOR,
+  CHART_FLUCTUATION_COLOR,
   DEFAULT_DATE_RANGE,
   DEFAULT_FORECAST_AMOUNT,
 } from './constants';
@@ -27,10 +27,6 @@ export default {
   data() {
     return {
       modalTab: null,
-      chartOptions: {
-        responsive: true,
-        maintainAspectRatio: false,
-      },
       chartDateRange: DEFAULT_DATE_RANGE,
       forecastAmount: DEFAULT_FORECAST_AMOUNT,
       dump: {
@@ -45,6 +41,18 @@ export default {
     },
   },
   computed: {
+    chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        annotation: this.chartPDKLine,
+        scales: {
+          yAxes: [{
+            beginAtZero: true,
+          }],
+        },
+      };
+    },
     isChanged() {
       return this.chartDateRange !== this.dump.chartDateRange ||
         this.forecastAmount !== this.dump.forecastAmount;
@@ -71,6 +79,33 @@ export default {
 
         return CHART_CURRENT_COLOR;
       });
+    },
+    chartPDKLine() {
+      const pdkValue = this.graphData.pdk[this.currentActiveSubstance.name];
+      const yAdjust = pdkValue === 0 ? -12 : 12;
+      return {
+        annotations: [
+          {
+            type: 'line',
+            mode: 'horizontal',
+            scaleID: 'y-axis-0',
+            value: pdkValue,
+            borderColor: 'red',
+            borderWidth: 1,
+            label: {
+              backgroundColor: 'rgba(0,0,140,.5)',
+              cornerRadius: 2,
+              xPadding: 4,
+              yPadding: 3,
+              position: 'left',
+              yAdjust,
+              xAdjust: 3,
+              content: 'Пдк',
+              enabled: true,
+            },
+          },
+        ],
+      };
     },
     chartCurrent() {
       let previousDay = null;
