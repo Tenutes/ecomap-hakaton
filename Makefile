@@ -4,6 +4,8 @@ build:
 	${COMPOSE} build
 up:
 	${COMPOSE} up
+daemon:
+	${COMPOSE} up -d
 reload:
 	${COMPOSE} stop
 	${COMPOSE} up -d
