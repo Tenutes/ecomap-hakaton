@@ -10,3 +10,11 @@ export const DEFAULT_START_DATE = parse(LAST_DATA_UPDATE, 'dd.MM.yyyy HH:mm:ss',
 export const START_DATE = format(addDays(DEFAULT_START_DATE, -1), GRAPH_FORMAT);
 export const END_DATE = format(DEFAULT_START_DATE, GRAPH_FORMAT);
 export const MAX_DATA_LENGTH = 300;
+
+export const PDK_VALUES = {
+  CO: 5,
+  NO: 0.2,
+  NO2: 0.4,
+  'PM2.5': 0.16,
+  PM10: 0.3,
+};

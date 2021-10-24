@@ -26,14 +26,18 @@ export default {
       <el-divider content-position="left">Концентрация веществ</el-divider>
       <div v-for="({name, value}, index) in station.substances" :key="index" class="sidebar__substance">
         <p class="sidebar__substance-name">{{ name }}</p>
-        <p class="sidebar__substance-value">{{ value }}</p>
+        <p class="sidebar__substance-value">{{ value }} мг/м<sup>3</sup></p>
       </div>
     </div>
     <div class="sidebar__block" v-if="station.near_station_substances">
       <el-divider content-position="left">На ближайшей станции: {{ station.near_station_name }}</el-divider>
-      <div v-for="({name, value}, index) in station.near_station_substances" :key="index" class="sidebar__substance">
+      <div
+        v-for="({name, value}, index) in station.near_station_substances"
+        :key="index"
+        class="sidebar__substance"
+      >
         <p class="sidebar__substance-name">{{ name }}</p>
-        <p class="sidebar__substance-value">{{ value }}</p>
+        <p class="sidebar__substance-value">{{ value }} мг/м<sup>3</sup></p>
       </div>
     </div>
     <div class="sidebar__block sidebar__block--padded">
@@ -84,6 +88,7 @@ export default {
   &__substance {
     padding: 0 15px;
     display: flex;
+    align-items: flex-end;
     justify-content: space-between;
     margin-bottom: 10px;
 
@@ -109,7 +114,7 @@ export default {
   }
 
   &__substance-value {
-
+    white-space: nowrap;
   }
 
   h2 {

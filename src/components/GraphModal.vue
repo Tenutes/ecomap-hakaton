@@ -1,7 +1,7 @@
 <script>
 import { format, isSameDay, parseISO, parse, isBefore } from 'date-fns';
 
-import { LAST_DATA_UPDATE, MAX_DATA_LENGTH, MIN_DATE_NEW_POINT } from '../config';
+import { LAST_DATA_UPDATE, MAX_DATA_LENGTH, MIN_DATE_NEW_POINT, PDK_VALUES } from '../config';
 
 import LineChart from './LineChart';
 import {
@@ -28,6 +28,7 @@ export default {
   },
   data() {
     return {
+      normalizeData: false,
       modalTab: null,
       chartDateRange: DEFAULT_DATE_RANGE,
       forecastAmount: DEFAULT_FORECAST_AMOUNT,
@@ -43,6 +44,7 @@ export default {
     },
     modalVisible(n) {
       if (!n) {
+        this.normalizeData = false;
         this.chartDateRange = DEFAULT_DATE_RANGE;
         this.forecastAmount = DEFAULT_FORECAST_AMOUNT;
         this.dump = {
@@ -134,9 +136,12 @@ export default {
         return CHART_CURRENT_COLOR;
       });
     },
+    pdkValue() {
+      return PDK_VALUES[this.currentActiveSubstance.name];
+    },
     chartPDKLine() {
-      const pdkValue = this.graphData.pdk[this.currentActiveSubstance.name];
-      const yAdjust = pdkValue <= this.minGraphData ? -12 : 12;
+      const yAdjust = this.pdkValue <= this.minGraphData ? -12 : 12;
+      const pdk = this.normalizeData ? 1 : this.pdkValue;
       return {
         annotations: [
           {
@@ -144,7 +149,7 @@ export default {
             type: 'line',
             mode: 'horizontal',
             scaleID: 'y-axis-0',
-            value: pdkValue,
+            value: pdk,
             borderColor: 'red',
             borderWidth: 1,
             label: {
@@ -155,7 +160,7 @@ export default {
               position: 'left',
               yAdjust,
               xAdjust: 3,
-              content: `Пдк ${pdkValue}`,
+              content: `Пдк ${ pdk }`,
               enabled: true,
             },
           },
@@ -205,7 +210,8 @@ export default {
         datasets: {
           label: datasetLabel,
           fill: false,
-          data: this.currentActiveSubstanceFilteredData.map(({ value }) => value),
+          data: this.currentActiveSubstanceFilteredData
+            .map(({ value }) => this.normalizeData ? value / this.pdkValue : value),
           borderWidth: 1,
           pointBorderWidth: 1,
           pointRadius: 2,
@@ -238,7 +244,7 @@ export default {
           data: [
             ...(new Array(this.chartCurrent.datasets.data.length - 1).fill(Number.NaN)),
             this.chartCurrent.datasets.data.at(-1),
-            ...forecast.map(({ value }) => value),
+            ...forecast.map(({ value }) => this.normalizeData ? value / this.pdkValue : value),
           ],
           borderWidth: 1,
           pointRadius: 2,
@@ -256,7 +262,7 @@ export default {
         datasets: {
           label: 'Данные со спутника: ' + this.currentActiveSubstance?.name,
           fill: false,
-          data: this.currentActiveSubstance?.data?.map(({ value }) => value) || [],
+          data: this.currentActiveSubstance?.data?.map(({ value }) => this.normalizeData ? value / this.pdkValue : value) || [],
           borderWidth: 1,
           pointRadius: 2,
           borderColor: CHART_SPUTNIK_COLOR,
@@ -312,7 +318,15 @@ export default {
       />
     </el-tabs>
     <div class="modal__chart">
-      <LineChart v-if="chartDatasets.length" :chart-data="chartData" :options="chartOptions"/>
+      <template v-if="chartDatasets.length">
+        <div class="modal__normalize">
+          <p>Нормализовать данные под значение ПДК</p>
+          <el-switch
+            v-model="normalizeData"
+          />
+        </div>
+        <LineChart :chart-data="chartData" :options="chartOptions"/>
+      </template>
       <p class="modal__chart-empty" v-else>Данных по данной станции на данной момент нет</p>
     </div>
     <div class="modal__date">
@@ -377,6 +391,16 @@ export default {
     p {
       margin-bottom: 5px;
       font-size: 14px;
+    }
+  }
+
+  &__normalize {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+
+    p {
+      margin-right: 10px;
     }
   }
 }

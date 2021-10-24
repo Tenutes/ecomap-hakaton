@@ -5,7 +5,7 @@ import GraphModal from './components/GraphModal';
 import YaMap from './components/Map';
 import Sidebar from './components/Sidebar';
 import { DEFAULT_FORECAST_AMOUNT } from './components/constants';
-import { END_DATE, GRAPH_FORMAT, LAST_DATA_UPDATE, START_DATE } from './config';
+import { END_DATE, GRAPH_FORMAT, LAST_DATA_UPDATE, PDK_VALUES, START_DATE } from './config';
 import GraphService from './services/GraphService';
 import StationService from './services/StationService';
 
@@ -22,9 +22,15 @@ export default {
     };
   },
   LAST_DATA_UPDATE,
+  PDK_VALUES,
   async mounted() {
     const { data } = await StationService.getStations();
     this.points = data.stations;
+  },
+  computed: {
+    pdks() {
+      return Array.from(Object.entries(this.$options.PDK_VALUES).map(([key, value]) => ({ key, value })));
+    },
   },
 
   methods: {
@@ -103,7 +109,15 @@ export default {
 <template>
 <div class="app">
   <div class="app__map">
-    <p class="app__last-date">Данные от: {{ $options.LAST_DATA_UPDATE }}</p>
+    <div class="app__data">
+      <p class="app__last-date">Данные от: {{ $options.LAST_DATA_UPDATE }}</p>
+      <div class="app__pdks">
+        <p class="app__pdks-title">Значения ПДК</p>
+        <p class="app__pdks-item" v-for="({key, value}) in pdks" :key="key">
+          <span>{{ key }}</span><span>{{ value }}</span>
+        </p>
+      </div>
+    </div>
     <ya-map
       @select-station="selectStation"
       @select-new-station="selectNewStation"
@@ -157,16 +171,67 @@ body {
     transition: .25s;
   }
 
-  &__last-date {
-    font-size: 14px;
+  &__data {
     position: absolute;
     top: 15px;
     right: 15px;
     z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  &__last-date {
+    font-size: 14px;
     padding: 5px 10px;
     background: rgba(white, .95);
     border-radius: 5px;
-    box-shadow: 0 10px 15px rgba(black, .14)
+    box-shadow: 0 10px 15px rgba(black, .14);
+    margin-bottom: 10px;
+  }
+
+  &__pdks {
+    width: 200px;
+    padding: 5px 10px;
+    background: rgba(white, .95);
+    border-radius: 5px;
+    box-shadow: 0 10px 15px rgba(black, .14);
+  }
+
+  &__pdks-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 15px;
+  }
+
+  &__pdks-item {
+    display: flex;
+    align-items: center;
+
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      font-size: 14px;
+
+      &:first-child {
+        font-weight: bold;
+        color: #1E1E70;
+        margin-right: 5px;
+        flex-grow: 1;
+
+        &::after {
+          padding-left: 5px;
+          display: inline-block;
+          content: ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   . . . . . . . . . . . . . . . . . . . . ";
+          color: #999;
+          font-size: 14px;
+        }
+      }
+
+      &:last-child {
+        flex-shrink: 0;
+      }
+    }
   }
 }
 </style>
