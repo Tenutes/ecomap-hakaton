@@ -155,7 +155,7 @@ export default {
               position: 'left',
               yAdjust,
               xAdjust: 3,
-              content: 'Пдк',
+              content: `Пдк ${pdkValue}`,
               enabled: true,
             },
           },
