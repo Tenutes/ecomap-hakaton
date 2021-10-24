@@ -39,7 +39,7 @@ export default {
       },
       polygon: {
         visible: false,
-        coords: [[[55.85, 37.85], [55.65, 37.85], [55.65, 37.45], [55.85, 37.45]]],
+        coords: [[[55.95, 38.15], [55.45, 38.15], [55.45, 37.15], [55.95, 37.15]]],
         options: { fill: true, fillImageHref: PolygonImage, fillOpacity: .75 },
       },
     };
@@ -100,8 +100,8 @@ export default {
       </el-button>
     </div>
     <div v-if="polygon.visible" class="polygon-legend">
-      <p><span style="background: #fde723"></span> - малая концентрация</p>
-      <p><span style="background: #440054"></span> - большая концентрация</p>
+      <p><span style="background: #FDE723"></span> - большая концентрация</p>
+      <p><span style="background: #440054"></span> - малая концентрация</p>
     </div>
   </div>
   <div class="map__container" :class="{'choose-point': choosePoint}">
